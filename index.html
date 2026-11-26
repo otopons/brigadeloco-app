@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="eu">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Brigade Loco · Merch</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#121a2c">
+<link rel="icon" href="img/logo-10.png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BL Merch">
+<link rel="artifact-thumbnail" href="img/logo-10.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+
+<!-- Diseño de Arte: cabecera con el logo "Brigade x Loco", cuatro apartados abajo
+     (Ventas, Stock, Productos y Ajustes). Colores del disco "Bide baten esanahia". -->
+
+<header class="top">
+  <div class="top-inner">
+    <img class="logo" src="img/logo-cabecera.png" alt="Brigade x Loco">
+    <div class="top-meta">
+      <button class="concert-chip" id="concertChip" type="button" data-act="go" data-tab="settings"></button>
+      <span class="sync" id="sync" role="status" aria-live="polite"></span>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="wrap"></main>
+
+<div class="cartbar" id="cartbar" hidden></div>
+
+<nav class="tabbar" aria-label="Atalak">
+  <button type="button" data-act="go" data-tab="sales" id="tab-sales">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18l-2 11H5L3 6Zm4 14a1.5 1.5 0 1 0 0 .01M17 20a1.5 1.5 0 1 0 0 .01M3 6 2 3"/></svg>
+    <span data-t="tab.sales"></span>
+  </button>
+  <button type="button" data-act="go" data-tab="stock" id="tab-stock">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l9-5 9 5v8l-9 5-9-5V8Zm0 0 9 5 9-5M12 13v8"/></svg>
+    <span data-t="tab.stock"></span>
+  </button>
+  <button type="button" data-act="go" data-tab="products" id="tab-products">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3 3 6l2 5 2-1v11h10V10l2 1 2-5-5-3c0 2-2 3-4 3S8 5 8 3Z"/></svg>
+    <span data-t="tab.products"></span>
+  </button>
+  <button type="button" data-act="go" data-tab="settings" id="tab-settings">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0M16 4v4M10 10v4M18 16v4"/></svg>
+    <span data-t="tab.settings"></span>
+  </button>
+</nav>
+
+<div class="sheet-backdrop" id="sheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-body" id="sheetBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<input type="file" id="photoInput" accept="image/*" hidden>
+<input type="file" id="csvInput" accept=".csv,text/csv,text/plain" hidden>
+
+<script src="config.js" charset="utf-8"></script>
+<script src="i18n.js" charset="utf-8"></script>
+<script src="store.js" charset="utf-8"></script>
+<script src="app.js" charset="utf-8"></script>
+<script src="pwa.js" charset="utf-8"></script>
