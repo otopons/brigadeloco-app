@@ -211,6 +211,11 @@ input[type="text"], input[type="number"], input[type="date"], input[type="search
   padding: 10px 11px;
   min-height: 44px;
 }
+/* El iPhone da a la fecha un ancho y un alto propios y se salía de la tarjeta. */
+input[type="date"] { -webkit-appearance: none; appearance: none; display: block; max-width: 100%; text-align: left; line-height: 22px; }
+input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+.field { min-width: 0; align-content: start; }
+.row:has(> .field) { align-items: start; }
 .check { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
 .check input { width: 22px; height: 22px; accent-color: var(--navy); }
 
