@@ -1,10 +1,13 @@
 // Permite abrir la app sin cobertura: guarda una copia de sus archivos.
 // Las ventas no pasan por aquí (van a la hoja de Google y, sin conexión, esperan en la cola de store.js).
-const CACHE = "bl-merch-dca64f8";
+const CACHE = "bl-merch-e60628a";
 const FILES = [
   "./", "index.html", "styles.css", "config.js", "i18n.js", "store.js", "app.js", "pwa.js",
   "manifest.webmanifest", "img/logo-10.png", "img/logo-cabecera.png",
-  "img/icon-192.png", "img/icon-512.png", "img/apple-touch-icon.png",
+  "img/icon-192.png", "img/icon-512.png", "img/apple-touch-icon.png", "produktuak.csv",
+  ...["bisera", "camiseta-away-beltza", "camiseta-away-txuria", "cd-amets-bati-lotuta", "cd-bide-baten-esanahia",
+    "kamiseta-acab-beltza", "kamiseta-acab-txuria", "sudadera-beltza", "sudadera-grisa", "tote-bag", "txapela",
+    "vinilo-bide-baten-esanahia"].map((f) => "img/produktuak/" + f + ".jpg"),
 ];
 
 self.addEventListener("install", (e) => {

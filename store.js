@@ -415,7 +415,7 @@ const Store = (() => {
   function photoUrl(ref) {
     if (!ref || typeof ref !== "string") return "";
     if (ref.startsWith("data:image/")) return ref;
-    if (/^img\/[\w.-]+\.(jpe?g|png|webp)$/i.test(ref)) return ref; // fotos que vienen con la app
+    if (/^img\/(?:[\w-]+\/)?[\w.-]+\.(jpe?g|png|webp)$/i.test(ref)) return ref; // fotos que vienen con la app
     if (/^[0-9a-f]{32}$/i.test(ref)) return "/_blob/" + ref;
     return "";
   }

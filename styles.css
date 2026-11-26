@@ -63,6 +63,9 @@ body {
   font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.4;
+  /* Deja sitio a la barra de estado (iPhone con la app en la pantalla de inicio):
+     sin esto la cabecera se monta sobre el contenido. */
+  padding-top: var(--safe-top);
   -webkit-tap-highlight-color: transparent;
 }
 button, input, select { font: inherit; color: inherit; }

@@ -278,7 +278,8 @@ function viewSell() {
   }
   if (!products.length) {
     return html + `<div class="empty"><p>${esc(t("sell.noProducts"))}</p>
-      <button class="btn" type="button" data-act="go" data-tab="products">${esc(t("sell.goProducts"))}</button></div>`;
+      <button class="btn" type="button" data-act="loadCatalog">${esc(t("set.catalog"))}</button>
+      <button class="btn secondary" type="button" data-act="go" data-tab="products">${esc(t("sell.goProducts"))}</button></div>`;
   }
   html += `<input type="search" id="search" placeholder="${esc(t("sell.search"))}" value="${esc(state.search)}" autocomplete="off">`;
   html += `<div class="grid" id="sellGrid">${sellCards()}</div>`;
@@ -554,7 +555,9 @@ function viewProducts() {
   let html = `<div class="row spread"><h2>${esc(t("prod.title"))}</h2>
     <button class="btn" type="button" data-act="newProduct">+ ${esc(t("prod.new"))}</button></div>`;
   if (!products.length) {
-    return html + `<div class="empty"><p>${esc(t("prod.none"))}</p><p class="small">${esc(t("prod.importHint"))}</p>
+    return html + `<div class="empty"><p>${esc(t("prod.none"))}</p>
+      <button class="btn" type="button" data-act="loadCatalog">${esc(t("set.catalog"))}</button>
+      <p class="small">${esc(t("prod.importHint"))}</p>
       <button class="btn secondary" type="button" data-act="go" data-tab="settings">${esc(t("tab.settings"))}</button></div>`;
   }
   html += `<section class="panel"><div class="list">${products.map((p) => `
@@ -685,6 +688,7 @@ function viewSettings() {
   html += `<section class="panel"><h3>${esc(t("set.data"))}</h3>
     <div class="row"><button class="btn secondary" type="button" data-act="exportSales">${esc(t("set.exportSales"))}</button>
     <button class="btn secondary" type="button" data-act="exportStock">${esc(t("set.exportStock"))}</button></div>
+    <button class="btn secondary" type="button" data-act="loadCatalog">${esc(t("set.catalog"))}</button>
     <button class="btn secondary" type="button" data-act="importCsv">${esc(t("set.import"))}</button>
     <p class="small muted">${esc(t("set.importHelp"))}</p></section>`;
 
@@ -758,6 +762,7 @@ function importCsv(text) {
   const iPrice = find(/preci|prezio|price/);
   const iSizes = find(/talla|size/);
   const iUnits = find(/unidad|unitate|kopuru|stock|units/);
+  const iPhoto = find(/argazki|foto|photo/);
   if (iName < 0) { toast(t("set.importNone")); return; }
 
   const existing = new Set(state.products.map((p) => String(p.izena).trim().toLowerCase()));
@@ -778,14 +783,29 @@ function importCsv(text) {
       const m = part.trim().match(/^(\S+)\s*[:=]?\s*(\d+)$/);
       if (m) units[m[1].toUpperCase() === "BAKARRA" ? ONE_SIZE : m[1].toUpperCase()] = Number(m[2]);
     });
+    // Foto: nombre de un archivo de img/produktuak/ (las fotos que vienen con la app)
+    const photo = iPhoto >= 0 ? String(r[iPhoto] || "").trim() : "";
+    const argazkia = /^[\w.-]+\.(jpe?g|png|webp)$/i.test(photo) ? "img/produktuak/" + photo : null;
     const id = Store.newId();
     const now = Date.now();
-    saveProduct({ id, izena: name, prezioa: price, tallak: sortSizes([...new Set(sizes)]), argazkia: null, ordena: order++ });
+    saveProduct({ id, izena: name, prezioa: price, tallak: sortSizes([...new Set(sizes)]), argazkia, ordena: order++ });
     Store.set(COL.stock, id, { tallak: Object.fromEntries(sizes.map((s) => [s, { n: units[s] || 0, at: now }])) });
     existing.add(name.toLowerCase());
     count++;
   }
   toast(count ? t("set.imported", { n: count }) : t("set.importNone"));
+}
+
+// Lista de productos del grupo que viene con la app (app/produktuak.csv), con sus fotos.
+async function loadCatalog() {
+  if (!guardWrite()) return;
+  try {
+    const res = await fetch("produktuak.csv", { cache: "no-store" });
+    if (!res.ok) throw new Error(res.status);
+    importCsv(await res.text());
+  } catch (err) {
+    toast(t("set.catalogError"));
+  }
 }
 
 // ---------- Hoja inferior ----------
@@ -927,6 +947,7 @@ document.addEventListener("click", (ev) => {
     case "exportSales": exportSales(); break;
     case "exportStock": exportStock(); break;
     case "importCsv": $("#csvInput").click(); break;
+    case "loadCatalog": loadCatalog(); break;
     case "forgetPin": Store.forgetPin(); break;
   }
 });
