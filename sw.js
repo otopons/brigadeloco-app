@@ -1,6 +1,6 @@
 // Permite abrir la app sin cobertura: guarda una copia de sus archivos.
 // Las ventas no pasan por aquí (van a la hoja de Google y, sin conexión, esperan en la cola de store.js).
-const CACHE = "bl-merch-e60628a";
+const CACHE = "bl-merch-ee35fd8";
 const FILES = [
   "./", "index.html", "styles.css", "config.js", "i18n.js", "store.js", "app.js", "pwa.js",
   "manifest.webmanifest", "img/logo-10.png", "img/logo-cabecera.png",
@@ -29,8 +29,10 @@ self.addEventListener("fetch", (e) => {
   const sameOrigin = url.origin === self.location.origin;
   const isFont = url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com";
   if (!sameOrigin && !isFont) return;
+  // "no-cache": pregunta siempre a GitHub si hay versión nueva, en vez de usar la copia del navegador
+  // (GitHub la guarda 10 minutos y se mezclaban archivos de versiones distintas).
   e.respondWith(
-    fetch(req)
+    (sameOrigin ? fetch(req.url, { cache: "no-cache" }) : fetch(req))
       .then((res) => {
         if (res.ok || res.type === "opaque") {
           const copy = res.clone();
@@ -38,6 +40,6 @@ self.addEventListener("fetch", (e) => {
         }
         return res;
       })
-      .catch(() => caches.match(req).then((hit) => hit || caches.match("index.html"))),
+      .catch(() => caches.match(req, { ignoreSearch: true }).then((hit) => hit || caches.match("index.html"))),
   );
 });
