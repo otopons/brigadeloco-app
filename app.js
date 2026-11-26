@@ -765,12 +765,23 @@ function importCsv(text) {
   const iPhoto = find(/argazki|foto|photo/);
   if (iName < 0) { toast(t("set.importNone")); return; }
 
-  const existing = new Set(state.products.map((p) => String(p.izena).trim().toLowerCase()));
+  const byName = new Map(state.products.map((p) => [String(p.izena).trim().toLowerCase(), p]));
+  const existing = new Set(byName.keys());
   let order = Date.now();
   let count = 0;
+  let photos = 0;
   for (const r of rows.slice(1)) {
     const name = String(r[iName] || "").replace(/\s*\(añadida por .*?\)\s*$/i, "").trim();
-    if (!name || existing.has(name.toLowerCase())) continue;
+    if (!name) continue;
+    // Foto: nombre de un archivo de img/produktuak/ (las fotos que vienen con la app)
+    const photo = iPhoto >= 0 ? String(r[iPhoto] || "").trim() : "";
+    const argazkia = /^[\w.-]+\.(jpe?g|png|webp)$/i.test(photo) ? "img/produktuak/" + photo : null;
+    if (existing.has(name.toLowerCase())) {
+      // Ya existe: no se duplica, pero si no tiene foto se le pone la de la lista.
+      const p = byName.get(name.toLowerCase());
+      if (p && !p.argazkia && argazkia) { saveProduct({ ...p, argazkia }); photos++; }
+      continue;
+    }
     const price = iPrice >= 0 ? parseMoney(r[iPrice]) ?? 0 : 0;
     let sizes = iSizes >= 0 ? String(r[iSizes] || "").split(/[,/·|]+/).map((s) => s.trim()).filter(Boolean) : [];
     sizes = sizes.map((s) => (/^(bakarra|única|unica|one size|tu)$/i.test(s) ? ONE_SIZE : s.toUpperCase()));
@@ -783,9 +794,6 @@ function importCsv(text) {
       const m = part.trim().match(/^(\S+)\s*[:=]?\s*(\d+)$/);
       if (m) units[m[1].toUpperCase() === "BAKARRA" ? ONE_SIZE : m[1].toUpperCase()] = Number(m[2]);
     });
-    // Foto: nombre de un archivo de img/produktuak/ (las fotos que vienen con la app)
-    const photo = iPhoto >= 0 ? String(r[iPhoto] || "").trim() : "";
-    const argazkia = /^[\w.-]+\.(jpe?g|png|webp)$/i.test(photo) ? "img/produktuak/" + photo : null;
     const id = Store.newId();
     const now = Date.now();
     saveProduct({ id, izena: name, prezioa: price, tallak: sortSizes([...new Set(sizes)]), argazkia, ordena: order++ });
@@ -793,7 +801,9 @@ function importCsv(text) {
     existing.add(name.toLowerCase());
     count++;
   }
-  toast(count ? t("set.imported", { n: count }) : t("set.importNone"));
+  if (count) toast(t("set.imported", { n: count }));
+  else if (photos) toast(t("set.photosAdded", { n: photos }));
+  else toast(t("set.importNone"));
 }
 
 // Lista de productos del grupo que viene con la app (app/produktuak.csv), con sus fotos.
