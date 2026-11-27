@@ -129,7 +129,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: var(--safe
   left: 0; right: 0; bottom: 0;
   z-index: 20;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   background: var(--navy);
   padding-bottom: var(--safe-bottom);
   border-top: 2px solid var(--mustard);
@@ -142,9 +142,10 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: var(--safe
   justify-items: center;
   gap: 2px;
   padding: 8px 2px 9px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: .02em;
+  letter-spacing: .01em;
+  white-space: nowrap;
 }
 .tabbar svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .tabbar button[aria-current="page"] { color: var(--mustard); }
@@ -300,7 +301,7 @@ input[type="date"]::-webkit-date-and-time-value { text-align: left; }
 .methods { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
 .methods button { border: 1.5px solid var(--line); background: var(--bg); border-radius: 12px; padding: 12px 6px; font-weight: 700; }
 .methods button[aria-pressed="true"] { border-color: var(--navy); background: var(--navy); color: #fff; }
-.quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.quick { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
 .quick button { border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 10px 4px; font-weight: 700; }
 .change-box { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 12px; border-radius: 12px; background: var(--chip); font-weight: 600; }
 .change-box b { font-family: var(--font-display); font-size: 30px; font-weight: 400; }
@@ -436,3 +437,6 @@ body.has-cart .toast { bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 100px
 .cart-item-body { display: grid; gap: 4px; min-width: 0; }
 .cart-item-body .row { gap: 12px; }
 .sheet .cart-sum { display: flex; justify-content: space-between; align-items: baseline; }
+
+/* Apartados que llegarán más adelante */
+.panel.soon { border-style: dashed; opacity: .85; }

@@ -1,6 +1,6 @@
 // Permite abrir la app sin cobertura: guarda una copia de sus archivos.
 // Las ventas no pasan por aquí (van a la hoja de Google y, sin conexión, esperan en la cola de store.js).
-const CACHE = "bl-merch-a094513";
+const CACHE = "bl-merch-99129e0";
 const FILES = [
   "./", "index.html", "styles.css", "config.js", "i18n.js", "store.js", "app.js", "pwa.js",
   "manifest.webmanifest", "img/logo-10.png", "img/logo-cabecera.png",

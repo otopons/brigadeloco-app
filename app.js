@@ -1,5 +1,6 @@
 // Brigade Loco · Merch — la app.
-// Apartados: Ventas (vender y resumen), Stock, Productos y Ajustes.
+// Apartados (menú de abajo): Saldu (vender), Agenda (conciertos), Stocka (stock y productos),
+// Finantzak (resumen de caja) y Gehiago (fans y ajustes).
 // Los datos viven en Store (store.js); los textos en i18n.js.
 "use strict";
 
@@ -22,7 +23,7 @@ const DEFAULT_SETTINGS = { aktiboa: null, moduak: { cash: true, card: true, bizu
 
 const state = {
   tab: "sales",
-  salesView: "sell", // "sell" | "summary"
+  stockView: "stock", // "stock" | "products"
   search: "",
   sellCat: null, // carpeta abierta en Vender (null = ver las carpetas)
   onlyLow: false,
@@ -86,7 +87,9 @@ function fmtDate(iso) {
   if (!iso) return "";
   const [y, m, d] = String(iso).split("-").map(Number);
   if (!y) return String(iso);
-  return new Date(y, m - 1, d).toLocaleDateString(getLang() === "es" ? "es-ES" : "eu-ES", { day: "numeric", month: "short", year: "numeric" });
+  // A mano: muchos móviles no traen los meses en euskera. Ej.: «2026ko abe. 12».
+  const months = ["urt.", "ots.", "mar.", "api.", "mai.", "eka.", "uzt.", "abu.", "ira.", "urr.", "aza.", "abe."];
+  return `${y}ko ${months[m - 1] || ""} ${d || ""}`.trim();
 }
 
 function fmtTime(ms) {
@@ -271,26 +274,33 @@ function renderChrome() {
 
 function renderMain() {
   const main = $("#main");
-  if (state.tab === "sales") main.innerHTML = state.salesView === "sell" ? viewSell() : viewSummary();
-  else if (state.tab === "stock") main.innerHTML = viewStock();
-  else if (state.tab === "products") main.innerHTML = viewProducts();
-  else main.innerHTML = viewSettings();
+  if (state.tab === "sales") main.innerHTML = viewSell();
+  else if (state.tab === "agenda") main.innerHTML = viewAgenda();
+  else if (state.tab === "stock") main.innerHTML = state.stockView === "products" ? viewProducts() : viewStock();
+  else if (state.tab === "finance") main.innerHTML = viewFinance();
+  else main.innerHTML = viewMore();
 }
 
-function salesSwitch() {
+function stockSwitch() {
   return `<div class="seg" role="group">
-    <button type="button" data-act="salesView" data-view="sell" aria-pressed="${state.salesView === "sell"}">${esc(t("sell.sell"))}</button>
-    <button type="button" data-act="salesView" data-view="summary" aria-pressed="${state.salesView === "summary"}">${esc(t("sell.summary"))}</button>
+    <button type="button" data-act="stockView" data-view="stock" aria-pressed="${state.stockView === "stock"}">${esc(t("stock.title"))}</button>
+    <button type="button" data-act="stockView" data-view="products" aria-pressed="${state.stockView === "products"}">${esc(t("prod.title"))}</button>
   </div>`;
+}
+
+// Apartado todavía sin hacer: se ve, pero avisa de que llegará más adelante.
+function soonPanel(titleKey, textKey) {
+  return `<section class="panel soon"><div class="row spread"><h3>${esc(t(titleKey))}</h3><span class="pill">${esc(t("soon.pill"))}</span></div>
+    <p class="small muted">${esc(t(textKey))}</p></section>`;
 }
 
 // ---------- Vender ----------
 function viewSell() {
   const products = sortedProducts();
-  let html = salesSwitch();
+  let html = "";
   if (!activeConcert()) {
     html += `<div class="notice warn row spread"><span>${esc(t("concert.choose"))}</span>
-      <button class="btn small secondary" type="button" data-act="go" data-tab="settings">${esc(t("tab.settings"))}</button></div>`;
+      <button class="btn small secondary" type="button" data-act="go" data-tab="agenda">${esc(t("tab.agenda"))}</button></div>`;
   }
   if (!products.length) {
     return html + `<div class="empty"><p>${esc(t("sell.noProducts"))}</p>
@@ -348,7 +358,7 @@ function sellCards() {
 // Al tocarla se abre el carrito, donde se quita cada producto por separado.
 function renderCart() {
   const bar = $("#cartbar");
-  const show = state.tab === "sales" && state.salesView === "sell" && state.cart.length > 0;
+  const show = state.tab === "sales" && state.cart.length > 0;
   document.body.classList.toggle("has-cart", show);
   if (!show) { bar.hidden = true; bar.innerHTML = ""; return; }
   bar.hidden = false;
@@ -515,8 +525,7 @@ function viewSummary() {
   const topList = [...top.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
   const topMax = topList.length ? topList[0][1] : 1;
 
-  let html = salesSwitch();
-  html += `<div class="field"><label for="sumConcert">${esc(t("sum.concert"))}</label><select id="sumConcert">${options.join("")}</select></div>`;
+  let html = `<div class="field"><label for="sumConcert">${esc(t("sum.concert"))}</label><select id="sumConcert">${options.join("")}</select></div>`;
   html += `<div class="kpis">
     <div class="kpi main"><small>${esc(t("sum.total"))}</small><b>${esc(money(total))}</b></div>
     <div class="kpi"><small>${esc(t("sum.count"))}</small><b>${valid.length}</b></div>
@@ -599,7 +608,7 @@ function viewStock() {
     value += n * (Number(p.prezioa) || 0);
     if (isLow(stockOf(p.id, size))) lowCount++;
   }));
-  let html = `<h2>${esc(t("stock.title"))}</h2>
+  let html = stockSwitch() + `
     <div class="kpis">
       <div class="kpi main"><small>${esc(t("stock.value"))}</small><b>${esc(money(value))}</b></div>
       <div class="kpi"><small>${esc(t("stock.units"))}</small><b>${units}</b></div>
@@ -633,13 +642,13 @@ function viewStock() {
 // ---------- Productos ----------
 function viewProducts() {
   const products = sortedProducts();
-  let html = `<div class="row spread"><h2>${esc(t("prod.title"))}</h2>
+  let html = stockSwitch() + `<div class="row spread"><h2>${esc(t("prod.title"))}</h2>
     <button class="btn" type="button" data-act="newProduct">+ ${esc(t("prod.new"))}</button></div>`;
   if (!products.length) {
     return html + `<div class="empty"><p>${esc(t("prod.none"))}</p>
       <button class="btn" type="button" data-act="loadCatalog">${esc(t("set.catalog"))}</button>
       <p class="small">${esc(t("prod.importHint"))}</p>
-      <button class="btn secondary" type="button" data-act="go" data-tab="settings">${esc(t("tab.settings"))}</button></div>`;
+      <button class="btn secondary" type="button" data-act="go" data-tab="more">${esc(t("tab.more"))}</button></div>`;
   }
   html += CATEGORIES.map((cat) => {
     const items = products.filter((p) => productCat(p) === cat);
@@ -734,30 +743,57 @@ function deleteProduct() {
   toast(t("prod.deleted"));
 }
 
+// ---------- Agenda ----------
+function concertRow(c) {
+  const active = c.id === state.settings.aktiboa;
+  const confirming = state.confirm === "concert:" + c.id;
+  return `<div class="concert-row ${active ? "active" : ""}">
+    <div><b>${esc(c.izena)}</b><div class="small muted">${esc(fmtDate(c.data))}</div></div>
+    <div class="row">${active ? `<span class="pill">${esc(t("set.concertActive"))}</span>`
+      : `<button class="btn small secondary" type="button" data-act="useConcert" data-id="${esc(c.id)}">${esc(t("set.concertUse"))}</button>`}
+      <button class="btn small danger" type="button" data-act="askDelConcert" data-id="${esc(c.id)}" aria-label="${esc(t("set.concertDelete"))}">✕</button></div>
+    ${confirming ? `<div class="confirm"><span>${esc(t("set.concertDeleteAsk"))}</span>
+      <button class="btn small danger" type="button" data-act="delConcert" data-id="${esc(c.id)}">${esc(t("set.concertDelete"))}</button>
+      <button class="btn small secondary" type="button" data-act="noConfirm">${esc(t("common.cancel"))}</button></div>` : ""}
+  </div>`;
+}
+
+function viewAgenda() {
+  const now = today();
+  const next = state.concerts.filter((c) => String(c.data || "") >= now)
+    .sort((a, b) => String(a.data).localeCompare(String(b.data)));
+  const past = state.concerts.filter((c) => String(c.data || "") < now)
+    .sort((a, b) => String(b.data).localeCompare(String(a.data)));
+  let html = `<h2>${esc(t("agenda.title"))}</h2>`;
+  html += `<section class="panel"><h3>${esc(t("set.concertAdd"))}</h3>
+    <p class="small muted">${esc(t("set.concertHelp"))}</p>
+    <div class="row"><div class="field grow" style="flex:2 1 160px"><label for="cName">${esc(t("set.concertName"))}</label><input type="text" id="cName" autocomplete="off"></div>
+    <div class="field grow" style="flex:1 1 130px"><label for="cDate">${esc(t("set.concertDate"))}</label><input type="date" id="cDate" value="${now}"></div></div>
+    <button class="btn" type="button" data-act="addConcert">${esc(t("set.concertAdd"))}</button></section>`;
+  html += `<section class="panel"><h3>${esc(t("agenda.next"))}</h3><div class="list">${next.length ? next.map(concertRow).join("")
+    : `<p class="muted">${esc(t("agenda.noNext"))}</p>`}</div></section>`;
+  html += `<section class="panel"><h3>${esc(t("agenda.past"))}</h3><div class="list">${past.length ? past.map(concertRow).join("")
+    : `<p class="muted">${esc(t("agenda.noPast"))}</p>`}</div></section>`;
+  html += soonPanel("agenda.loadTitle", "agenda.loadSoon");
+  return html;
+}
+
+// ---------- Finanzas ----------
+function viewFinance() {
+  return `<h2>${esc(t("fin.title"))}</h2>` + viewSummary()
+    + soonPanel("fin.invoicesTitle", "fin.invoicesSoon")
+    + soonPanel("fin.balanceTitle", "fin.balanceSoon");
+}
+
+// ---------- Más: fans y ajustes ----------
+function viewMore() {
+  return soonPanel("fans.title", "fans.soon") + viewSettings();
+}
+
 // ---------- Ajustes ----------
 function viewSettings() {
   const s = state.settings;
-  const concerts = [...state.concerts].sort((a, b) => String(b.data).localeCompare(String(a.data)));
   let html = `<h2>${esc(t("set.title"))}</h2>`;
-
-  html += `<section class="panel"><h3>${esc(t("set.concerts"))}</h3>
-    <p class="small muted">${esc(t("set.concertHelp"))}</p>
-    <div class="row"><div class="field grow" style="flex:2 1 160px"><label for="cName">${esc(t("set.concertName"))}</label><input type="text" id="cName" autocomplete="off"></div>
-    <div class="field grow" style="flex:1 1 130px"><label for="cDate">${esc(t("set.concertDate"))}</label><input type="date" id="cDate" value="${today()}"></div></div>
-    <button class="btn" type="button" data-act="addConcert">${esc(t("set.concertAdd"))}</button>
-    <div class="list">${concerts.length ? concerts.map((c) => {
-      const active = c.id === s.aktiboa;
-      const confirming = state.confirm === "concert:" + c.id;
-      return `<div class="concert-row ${active ? "active" : ""}">
-        <div><b>${esc(c.izena)}</b><div class="small muted">${esc(fmtDate(c.data))}</div></div>
-        <div class="row">${active ? `<span class="pill">${esc(t("set.concertActive"))}</span>`
-          : `<button class="btn small secondary" type="button" data-act="useConcert" data-id="${esc(c.id)}">${esc(t("set.concertUse"))}</button>`}
-          <button class="btn small danger" type="button" data-act="askDelConcert" data-id="${esc(c.id)}" aria-label="${esc(t("set.concertDelete"))}">✕</button></div>
-        ${confirming ? `<div class="confirm"><span>${esc(t("set.concertDeleteAsk"))}</span>
-          <button class="btn small danger" type="button" data-act="delConcert" data-id="${esc(c.id)}">${esc(t("set.concertDelete"))}</button>
-          <button class="btn small secondary" type="button" data-act="noConfirm">${esc(t("common.cancel"))}</button></div>` : ""}
-      </div>`;
-    }).join("") : `<p class="muted">${esc(t("set.concertNone"))}</p>`}</div></section>`;
 
   html += `<section class="panel"><h3>${esc(t("set.methods"))}</h3>${METHODS.map((m) =>
     `<label class="check"><input type="checkbox" data-method="${m}" ${s.moduak && s.moduak[m] === false ? "" : "checked"}> ${esc(t(METHOD_KEY[m]))}</label>`).join("")}
@@ -766,12 +802,6 @@ function viewSettings() {
   html += `<section class="panel"><h3>${esc(t("set.lowStock"))}</h3>
     <div class="field"><label for="lowStock">${esc(t("set.lowStockHelp"))}</label>
     <input type="number" inputmode="numeric" min="0" id="lowStock" value="${esc(s.baxua)}" style="max-width:120px"></div></section>`;
-
-  html += `<section class="panel"><h3>${esc(t("set.language"))}</h3>
-    <div class="seg" role="group">
-      <button type="button" data-act="lang" data-lang="eu" aria-pressed="${getLang() === "eu"}">Euskara</button>
-      <button type="button" data-act="lang" data-lang="es" aria-pressed="${getLang() === "es"}">Castellano</button>
-    </div></section>`;
 
   html += `<section class="panel"><h3>${esc(t("set.data"))}</h3>
     <div class="row"><button class="btn secondary" type="button" data-act="exportSales">${esc(t("set.exportSales"))}</button>
@@ -935,13 +965,16 @@ document.addEventListener("click", (ev) => {
 
   switch (act) {
     case "go":
-      state.tab = d.tab;
+      // Los enlaces antiguos a Productos y Ajustes van a su sitio nuevo.
+      if (d.tab === "products") { state.tab = "stock"; state.stockView = "products"; }
+      else if (d.tab === "settings") state.tab = "more";
+      else state.tab = d.tab;
       state.confirm = null;
       window.scrollTo(0, 0);
       render();
       break;
-    case "salesView":
-      state.salesView = d.view;
+    case "stockView":
+      state.stockView = d.view;
       state.confirm = null;
       render();
       break;
@@ -1056,10 +1089,6 @@ document.addEventListener("click", (ev) => {
       state.confirm = null;
       render();
       break;
-    case "lang":
-      setLang(d.lang);
-      render();
-      break;
     case "exportSales": exportSales(); break;
     case "exportStock": exportStock(); break;
     case "importCsv": $("#csvInput").click(); break;
@@ -1139,7 +1168,7 @@ document.addEventListener("keydown", (ev) => {
 // Arranque
 // ---------------------------------------------------------------------------
 (async function start() {
-  setLang(getLang());
+  setLang();
   renderChrome();
   $("#main").innerHTML = `<p class="muted">${esc(t("sync.loading"))}</p>`;
   await Store.init();

@@ -1,11 +1,28 @@
-// Testu guztiak bi hizkuntzatan. Hizkuntza Ezarpenak atalean aldatzen da (gailu bakoitzak berea).
-// Todos los textos en dos idiomas. El idioma se cambia en Ajustes (cada móvil el suyo).
+// Testu guztiak euskaraz. / Todos los textos, solo en euskera (decisión de noviembre 2026).
 "use strict";
 
 const TEXTS = {
   eu: {
-    "tab.sales": "Salmentak",
+    "tab.sales": "Saldu",
+    "tab.agenda": "Agenda",
     "tab.stock": "Stocka",
+    "tab.finance": "Finantzak",
+    "tab.more": "Gehiago",
+    "soon.pill": "Laster",
+    "agenda.title": "Agenda",
+    "agenda.next": "Hurrengo kontzertuak",
+    "agenda.past": "Pasatako kontzertuak",
+    "agenda.noNext": "Ez dago kontzertu berririk.",
+    "agenda.noPast": "Oraindik ez dago kontzertu pasaturik.",
+    "agenda.loadTitle": "Kontzertu bakoitzeko merch-a",
+    "agenda.loadSoon": "Laster: kontzertu bakoitzera zer eramango den prestatu, eta abisua bi egun lehenago.",
+    "fin.title": "Finantzak",
+    "fin.invoicesTitle": "Fakturak",
+    "fin.invoicesSoon": "Laster: merch eskaeren fakturak argazkiarekin gorde.",
+    "fin.balanceTitle": "Balantzea",
+    "fin.balanceSoon": "Laster: salmentak eta gastuak, datakako iragazkiekin.",
+    "fans.title": "Fanak",
+    "fans.soon": "Laster: fanen zerrenda eta aurre-salmenten estekak bidaltzeko aukera.",
     "tab.products": "Produktuak",
     "tab.settings": "Ezarpenak",
 
@@ -17,7 +34,7 @@ const TEXTS = {
     "sync.slow": "Ezin da datuetara iritsi oraindik",
 
     "concert.none": "Kontzerturik gabe",
-    "concert.choose": "Aukeratu kontzertua Ezarpenetan",
+    "concert.choose": "Aukeratu kontzertua Agendan",
 
     "sell.sell": "Saldu",
     "sell.summary": "Laburpena",
@@ -158,177 +175,14 @@ const TEXTS = {
     "pin.forget": "Ahaztu PINa mugikor honetan",
   },
 
-  es: {
-    "tab.sales": "Ventas",
-    "tab.stock": "Stock",
-    "tab.products": "Productos",
-    "tab.settings": "Ajustes",
-
-    "sync.ok": "Guardado",
-    "sync.pending": "{n} por enviar",
-    "sync.offline": "Sin conexión",
-    "sync.local": "Solo en este móvil",
-    "sync.loading": "Cargando…",
-    "sync.slow": "Aún no se llega a los datos",
-
-    "concert.none": "Sin concierto",
-    "concert.choose": "Elige el concierto en Ajustes",
-
-    "sell.sell": "Vender",
-    "sell.summary": "Resumen",
-    "sell.search": "Buscar producto",
-    "cat.label": "Carpeta",
-    "cat.arropa": "Ropa",
-    "cat.osagarriak": "Accesorios",
-    "cat.diskoak": "CD/LP",
-    "cat.count": "{n} productos",
-    "cat.back": "Carpetas",
-    "sell.noProducts": "Todavía no hay productos.",
-    "sell.goProducts": "Añadir productos",
-    "sell.soldOut": "Agotado",
-    "sell.left": "quedan {n}",
-    "sell.cartEmpty": "Toca una talla para añadirla",
-    "sell.total": "Total",
-    "sell.charge": "Cobrar",
-    "sell.clear": "Vaciar",
-    "cart.title": "Carrito",
-    "cart.see": "Ver y cambiar",
-    "cart.open": "Abrir el carrito",
-    "cart.remove": "Quitar",
-    "cart.keepSelling": "Seguir vendiendo",
-    "cart.clearAll": "Vaciar todo el carrito",
-    "cart.clearAsk": "¿Quitar todo del carrito?",
-    "sell.items": "{n} uds.",
-    "sell.noMethods": "No hay formas de pago activadas. Mira Ajustes.",
-
-    "pay.title": "Cobrar",
-    "pay.cash": "Efectivo",
-    "pay.card": "Tarjeta",
-    "pay.bizum": "Bizum",
-    "pay.received": "Recibido",
-    "pay.change": "Cambio",
-    "pay.missing": "Falta",
-    "pay.cardHelp": "Abre la app de SumUp, mete este importe y cobra con Tap to Pay (acercando la tarjeta o el móvil al móvil). Cuando lo acepte, pulsa Cobrado.",
-    "pay.bizumHelp": "Pide un Bizum por este importe. Cuando veas que ha llegado, pulsa Cobrado.",
-    "pay.done": "Cobrado",
-    "pay.cancel": "Cancelar",
-    "pay.saved": "Venta guardada · {total}",
-    "pay.stockWarn": "Ojo: {name} ({size}) se queda sin stock",
-
-    "sum.concert": "Concierto",
-    "sum.all": "Todos los conciertos",
-    "sum.total": "Total",
-    "sum.count": "Ventas",
-    "sum.units": "Unidades",
-    "sum.byMethod": "Por forma de pago",
-    "sum.top": "Lo más vendido",
-    "sum.list": "Lista de ventas",
-    "sum.none": "No hay ventas aquí.",
-    "sum.cancel": "Anular",
-    "sum.cancelAsk": "¿Anular esta venta? Las prendas vuelven al stock.",
-    "sum.cancelYes": "Sí, anular",
-    "sum.cancelled": "Anulada",
-    "sum.pending": "Por enviar",
-    "sum.sumupTitle": "Comparar con SumUp",
-    "sum.sumupHelp": "Escribe el total con tarjeta que da la app de SumUp para este concierto.",
-    "sum.sumupApp": "Según SumUp",
-    "sum.sumupOk": "Cuadra",
-    "sum.sumupDiff": "Diferencia: {diff}",
-    "sum.noConcert": "Sin concierto",
-
-    "stock.title": "Stock",
-    "stock.units": "Unidades totales",
-    "stock.value": "Valor del stock",
-    "stock.low": "Quedan pocas",
-    "stock.onlyLow": "Solo lo que queda poco",
-    "stock.none": "No hay productos. Añádelos en Productos.",
-    "stock.allGood": "No hay nada con poco stock.",
-
-    "prod.title": "Productos",
-    "prod.new": "Producto nuevo",
-    "prod.edit": "Editar producto",
-    "prod.name": "Nombre",
-    "prod.price": "Precio (€)",
-    "prod.sizes": "Tallas",
-    "prod.oneSize": "Única",
-    "prod.otherSize": "Otra talla",
-    "prod.add": "Añadir",
-    "prod.photo": "Foto",
-    "prod.photoPick": "Elegir foto",
-    "prod.photoRemove": "Quitar foto",
-    "prod.photoNoPerm": "Para subir fotos hace falta permiso de editor.",
-    "prod.save": "Guardar",
-    "prod.delete": "Borrar producto",
-    "prod.deleteAsk": "¿Seguro? Desaparecen el producto y su stock (las ventas antiguas se conservan).",
-    "prod.deleteYes": "Sí, borrar",
-    "prod.none": "Todavía no hay productos.",
-    "prod.importHint": "Si tienes una lista de productos (guardada desde Excel como CSV), puedes cargarla en Ajustes > Datos.",
-    "prod.needName": "Escribe el nombre",
-    "prod.needSize": "Elige al menos una talla",
-    "prod.saved": "Producto guardado",
-    "prod.deleted": "Producto borrado",
-    "prod.uploading": "Subiendo foto…",
-    "prod.photoError": "No se ha podido subir la foto",
-
-    "set.title": "Ajustes",
-    "set.concerts": "Conciertos",
-    "set.concertName": "Sala o nombre",
-    "set.concertDate": "Fecha",
-    "set.concertAdd": "Crear concierto",
-    "set.concertActive": "Actual",
-    "set.concertUse": "Usar",
-    "set.concertNone": "No hay conciertos.",
-    "set.concertHelp": "Cada venta se asocia al concierto actual.",
-    "set.concertDelete": "Borrar",
-    "set.concertDeleteAsk": "¿Borrar el concierto? Sus ventas se conservan, sin concierto.",
-    "set.methods": "Formas de pago",
-    "set.lowStock": "Aviso de stock bajo",
-    "set.lowStockHelp": "Avisa cuando en una talla quedan estas unidades o menos.",
-    "set.language": "Idioma",
-    "set.data": "Datos (Excel)",
-    "set.exportSales": "Exportar ventas",
-    "set.exportStock": "Exportar stock",
-    "set.catalog": "Cargar los productos del grupo",
-    "set.catalogError": "No se ha podido cargar la lista de productos",
-    "set.import": "Cargar lista de productos (CSV)",
-    "set.importHelp": "Los productos del grupo vienen con sus fotos. Para una lista propia: en Excel, Guardar como → CSV. Columnas: Producto; Precio; Tallas; Unidades. Los productos con el mismo nombre no se duplican.",
-    "set.imported": "{n} productos cargados",
-    "set.photosAdded": "{n} fotos añadidas",
-    "set.importNone": "No se han encontrado productos nuevos",
-    "set.exported": "Archivo listo",
-    "set.about": "Dónde se guardan los datos",
-    "set.aboutDb": "Los datos están compartidos: todos los móviles con el enlace ven lo mismo.",
-    "set.aboutLocal": "Modo prueba: los datos se guardan solo en este dispositivo.",
-
-    "common.save": "Guardar",
-    "common.cancel": "Cancelar",
-    "common.close": "Cerrar",
-    "common.error": "Algo ha salido mal",
-    "common.readonly": "Solo tienes permiso para ver.",
-    "pin.title": "PIN del grupo",
-    "pin.text": "Escribe el PIN del grupo para ver las ventas y el stock. Se guarda en este móvil.",
-    "pin.ok": "Entrar",
-    "pin.wrong": "PIN incorrecto. Inténtalo otra vez.",
-    "pin.noNet": "No hay conexión. Revisa internet e inténtalo otra vez.",
-    "pin.forget": "Olvidar el PIN en este móvil",
-  },
 };
 
-const LANG_KEY = "bl-merch:lang";
-let currentLang = (() => {
-  try { return localStorage.getItem(LANG_KEY) === "es" ? "es" : "eu"; } catch { return "eu"; }
-})();
-
 function t(key, vars) {
-  let s = (TEXTS[currentLang] && TEXTS[currentLang][key]) ?? TEXTS.eu[key] ?? key;
+  let s = TEXTS.eu[key] ?? key;
   if (vars) for (const [k, v] of Object.entries(vars)) s = s.replaceAll("{" + k + "}", String(v));
   return s;
 }
 
-function setLang(lang) {
-  currentLang = lang === "es" ? "es" : "eu";
-  try { localStorage.setItem(LANG_KEY, currentLang); } catch { /* sin almacenamiento */ }
-  document.documentElement.lang = currentLang;
-}
+function setLang() { document.documentElement.lang = "eu"; }
 
-function getLang() { return currentLang; }
+function getLang() { return "eu"; }
