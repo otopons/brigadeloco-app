@@ -3,7 +3,7 @@
 // - Publicada como enlace de Claude (artifact) con las capacidades db, user, assets y downloads:
 //   los datos se comparten entre todos los móviles que abren el enlace.
 // - Publicada fuera de Claude (como web o icono en el móvil) con `sheetsUrl` en config.js:
-//   los datos viven en una hoja de Google de Mikel (ver tools/google-sheets/Code.gs) y se
+//   los datos viven en la hoja de Google del grupo (ver tools/google-sheets/Code.gs) y se
 //   comparten entre todos los móviles. Cada móvil escribe una vez el PIN del grupo.
 // - Abierta en el ordenador (servidor local) o sin nada de lo anterior: modo prueba,
 //   los datos se guardan solo en este navegador (localStorage).

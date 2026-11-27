@@ -24,6 +24,7 @@ const state = {
   tab: "sales",
   salesView: "sell", // "sell" | "summary"
   search: "",
+  sellCat: null, // carpeta abierta en Vender (null = ver las carpetas)
   onlyLow: false,
   summaryConcert: null, // null = el actual
   cart: [], // { pid, size, qty }
@@ -126,9 +127,24 @@ function productById(id) { return state.products.find((p) => p.id === id); }
 function concertById(id) { return state.concerts.find((c) => c.id === id); }
 function activeConcert() { return concertById(state.settings.aktiboa) || null; }
 
-function sortedProducts() {
-  return [...state.products].sort((a, b) => (a.ordena ?? 0) - (b.ordena ?? 0) || String(a.izena).localeCompare(String(b.izena)));
+// Carpetas de productos: ropa, accesorios y discos (CD/LP).
+const CATEGORIES = ["arropa", "osagarriak", "diskoak"];
+
+// La carpeta guardada en el producto; si no tiene, se deduce del nombre y las tallas.
+function productCat(p) {
+  if (p && CATEGORIES.includes(p.mota)) return p.mota;
+  if (/\b(cd|lp|vinilo|vinyl|biniloa|binilo|diskoa|disco)\b/i.test(String(p && p.izena))) return "diskoak";
+  const sizes = (p && p.tallak) || [];
+  return sizes.length && sizes.every((s) => s === ONE_SIZE) ? "osagarriak" : "arropa";
 }
+
+function sortedProducts() {
+  return [...state.products].sort((a, b) =>
+    CATEGORIES.indexOf(productCat(a)) - CATEGORIES.indexOf(productCat(b))
+    || (a.ordena ?? 0) - (b.ordena ?? 0) || String(a.izena).localeCompare(String(b.izena)));
+}
+
+function catHeader(cat) { return `<h3 class="cat-title">${esc(t("cat." + cat))}</h3>`; }
 
 // Stock disponible = unidades contadas en el último ajuste − lo vendido después (sin contar anuladas).
 function computeStock() {
@@ -282,14 +298,37 @@ function viewSell() {
       <button class="btn secondary" type="button" data-act="go" data-tab="products">${esc(t("sell.goProducts"))}</button></div>`;
   }
   html += `<input type="search" id="search" placeholder="${esc(t("sell.search"))}" value="${esc(state.search)}" autocomplete="off">`;
-  html += `<div class="grid" id="sellGrid">${sellCards()}</div>`;
+  html += `<div id="sellGrid">${sellContent()}</div>`;
   return html;
+}
+
+// Sin buscar: primero las carpetas; dentro de una carpeta, sus productos. Al buscar, todo.
+function sellContent() {
+  const searching = state.search.trim() !== "";
+  if (!searching && !state.sellCat) {
+    return `<div class="folders">${CATEGORIES.map((cat) => {
+      const items = sortedProducts().filter((p) => productCat(p) === cat);
+      const cover = items.find((p) => Store.photoUrl(p.argazkia)) || items[0];
+      const inCart = state.cart.filter((l) => items.some((p) => p.id === l.pid)).reduce((n, l) => n + l.qty, 0);
+      return `<button type="button" class="folder" data-act="openCat" data-cat="${cat}">
+        ${photoHtml(cover || { izena: t("cat." + cat) })}
+        <span class="folder-body"><b>${esc(t("cat." + cat))}</b>
+        <small>${esc(t("cat.count", { n: items.length }))}${inCart ? " · " + esc(t("sell.items", { n: inCart })) : ""}</small></span>
+      </button>`;
+    }).join("")}</div>`;
+  }
+  let head = "";
+  if (!searching) {
+    head = `<div class="row folder-head"><button class="btn small secondary" type="button" data-act="openCat" data-cat="">‹ ${esc(t("cat.back"))}</button>
+      <h3 class="cat-title">${esc(t("cat." + state.sellCat))}</h3></div>`;
+  }
+  return head + `<div class="grid">${sellCards()}</div>`;
 }
 
 function sellCards() {
   const q = state.search.trim().toLowerCase();
   return sortedProducts()
-    .filter((p) => !q || String(p.izena).toLowerCase().includes(q))
+    .filter((p) => (q ? String(p.izena).toLowerCase().includes(q) : !state.sellCat || productCat(p) === state.sellCat))
     .map((p) => {
       const sizes = sortSizes(p.tallak || []).map((size) => {
         const n = stockOf(p.id, size) - cartQty(p.id, size);
@@ -305,27 +344,64 @@ function sellCards() {
     }).join("") || `<p class="muted">—</p>`;
 }
 
+// Barra del carrito: siempre visible al vender, con el número de prendas y el total.
+// Al tocarla se abre el carrito, donde se quita cada producto por separado.
 function renderCart() {
   const bar = $("#cartbar");
   const show = state.tab === "sales" && state.salesView === "sell" && state.cart.length > 0;
   document.body.classList.toggle("has-cart", show);
   if (!show) { bar.hidden = true; bar.innerHTML = ""; return; }
   bar.hidden = false;
+  bar.innerHTML = `<div class="wrap cart-sum">
+    <button class="cart-open" type="button" data-act="openCart" aria-label="${esc(t("cart.open"))}">
+      <span class="cart-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18l-2 11H5L3 6Zm4 14a1.5 1.5 0 1 0 0 .01M17 20a1.5 1.5 0 1 0 0 .01M3 6 2 3"/></svg>
+        <span class="badge">${cartUnits()}</span></span>
+      <span class="cart-label"><b>${esc(t("cart.title"))}</b><small>${esc(t("cart.see"))}</small></span>
+    </button>
+    <span class="total">${esc(money(cartTotal()))}</span>
+    <button class="btn dark" type="button" data-act="openPay">${esc(t("sell.charge"))}</button>
+  </div>`;
+}
+
+let cartSheetOpen = false;
+
+function sheetCart() {
   const lines = state.cart.map((l, i) => {
     const p = productById(l.pid);
-    return `<div class="cart-line"><span>${esc(p ? p.izena : "?")} · <b>${esc(sizeLabel(l.size))}</b></span>
-      <span class="qty"><button type="button" data-act="qty" data-i="${i}" data-d="-1" aria-label="−">−</button><span>${l.qty}</span>
-      <button type="button" data-act="qty" data-i="${i}" data-d="1" aria-label="+">+</button></span>
-      <span class="amount">${esc(money((p ? p.prezioa : 0) * l.qty))}</span></div>`;
+    return `<div class="cart-item">${photoHtml(p)}
+      <div class="cart-item-body"><b>${esc(p ? p.izena : "?")}</b>
+        <span class="small muted">${esc(sizeLabel(l.size))} · ${esc(moneyShort(p ? p.prezioa : 0))}</span>
+        <span class="row"><span class="qty"><button type="button" data-act="qty" data-i="${i}" data-d="-1" aria-label="−">−</button><span>${l.qty}</span>
+          <button type="button" data-act="qty" data-i="${i}" data-d="1" aria-label="+">+</button></span>
+          <span class="amount">${esc(money((p ? p.prezioa : 0) * l.qty))}</span></span></div>
+      <button class="btn small danger" type="button" data-act="removeLine" data-i="${i}" aria-label="${esc(t("cart.remove"))} ${esc(p ? p.izena : "")} ${esc(sizeLabel(l.size))}">${esc(t("cart.remove"))}</button>
+    </div>`;
   }).join("");
-  bar.innerHTML = `<div class="wrap">
-    <div class="cart-lines">${lines}</div>
-    <div class="cart-sum">
-      <button class="btn small secondary" type="button" data-act="clearCart">${esc(t("sell.clear"))}</button>
-      <span class="muted small">${esc(t("sell.items", { n: cartUnits() }))}</span>
-      <span class="total">${esc(money(cartTotal()))}</span>
-      <button class="btn dark" type="button" data-act="openPay">${esc(t("sell.charge"))}</button>
-    </div></div>`;
+  return `<h2 id="sheetTitle">${esc(t("cart.title"))} · ${esc(t("sell.items", { n: cartUnits() }))}</h2>
+    <div class="cart-items">${lines}</div>
+    <div class="cart-sum"><span class="muted">${esc(t("sell.total"))}</span><span class="total">${esc(money(cartTotal()))}</span></div>
+    <div class="row"><button class="btn secondary grow" type="button" data-act="closeSheet">${esc(t("cart.keepSelling"))}</button>
+      <button class="btn dark grow" type="button" data-act="openPay">${esc(t("sell.charge"))}</button></div>
+    ${state.confirm === "clearCart"
+      ? `<div class="confirm"><span>${esc(t("cart.clearAsk"))}</span>
+         <button class="btn small danger" type="button" data-act="clearCart">${esc(t("sell.clear"))}</button>
+         <button class="btn small secondary" type="button" data-act="noClear">${esc(t("common.cancel"))}</button></div>`
+      : `<button class="btn small secondary" type="button" data-act="askClear">${esc(t("cart.clearAll"))}</button>`}`;
+}
+
+function openCart() {
+  if (!state.cart.length) return;
+  cartSheetOpen = true;
+  openSheet(sheetCart());
+}
+
+// Después de cambiar el carrito: repinta la barra y, si está abierto, el carrito.
+function cartChanged() {
+  if (cartSheetOpen) {
+    if (state.cart.length) $("#sheetBody").innerHTML = sheetCart();
+    else closeSheet();
+  }
+  render();
 }
 
 // ---------- Cobro ----------
@@ -337,6 +413,7 @@ function openPay() {
   if (!methods.length) { toast(t("sell.noMethods")); return; }
   if (!methods.includes(pay.method)) pay.method = methods[0];
   pay.received = "";
+  cartSheetOpen = false;
   openSheet(sheetPay());
 }
 
@@ -531,10 +608,14 @@ function viewStock() {
   if (!products.length) return html + `<div class="empty"><p>${esc(t("stock.none"))}</p>
     <button class="btn" type="button" data-act="go" data-tab="products">${esc(t("sell.goProducts"))}</button></div>`;
   html += `<label class="check"><input type="checkbox" id="onlyLow" ${state.onlyLow ? "checked" : ""}> ${esc(t("stock.onlyLow"))}</label>`;
+  let lastCat = null;
   const items = products.map((p) => {
     const sizes = sortSizes(p.tallak || []).filter((s) => !state.onlyLow || isLow(stockOf(p.id, s)));
     if (!sizes.length) return "";
-    return `<section class="panel stock-item">${photoHtml(p)}
+    const cat = productCat(p);
+    const header = cat !== lastCat ? catHeader(cat) : "";
+    lastCat = cat;
+    return header + `<section class="panel stock-item">${photoHtml(p)}
       <div><div class="row spread"><b>${esc(p.izena)}</b><span class="muted small">${esc(moneyShort(p.prezioa))}</span></div>
       <div class="stock-sizes">${sizes.map((size) => {
         const n = stockOf(p.id, size);
@@ -560,11 +641,15 @@ function viewProducts() {
       <p class="small">${esc(t("prod.importHint"))}</p>
       <button class="btn secondary" type="button" data-act="go" data-tab="settings">${esc(t("tab.settings"))}</button></div>`;
   }
-  html += `<section class="panel"><div class="list">${products.map((p) => `
+  html += CATEGORIES.map((cat) => {
+    const items = products.filter((p) => productCat(p) === cat);
+    if (!items.length) return "";
+    return catHeader(cat) + `<section class="panel"><div class="list">${items.map((p) => `
     <div class="prod-row">${photoHtml(p)}
       <div><b>${esc(p.izena)}</b><div class="small muted">${esc(moneyShort(p.prezioa))} · ${sortSizes(p.tallak || []).map((s) => esc(sizeLabel(s))).join(" · ")}</div></div>
       <button class="btn small secondary" type="button" data-act="editProduct" data-id="${esc(p.id)}">${esc(t("prod.edit").split(" ")[0])}</button>
     </div>`).join("")}</div></section>`;
+  }).join("");
   return html;
 }
 
@@ -573,8 +658,8 @@ let editing = null; // copia del producto que se edita
 function openProduct(id) {
   const p = id ? productById(id) : null;
   editing = p
-    ? { id: p.id, izena: p.izena, prezioa: p.prezioa, tallak: [...(p.tallak || [])], argazkia: p.argazkia || null, ordena: p.ordena ?? 0, isNew: false, confirmDelete: false }
-    : { id: Store.newId(), izena: "", prezioa: 1500, tallak: ["S", "M", "L", "XL"], argazkia: null, ordena: Date.now(), isNew: true, confirmDelete: false };
+    ? { id: p.id, izena: p.izena, prezioa: p.prezioa, tallak: [...(p.tallak || [])], argazkia: p.argazkia || null, ordena: p.ordena ?? 0, mota: productCat(p), isNew: false, confirmDelete: false }
+    : { id: Store.newId(), izena: "", prezioa: 1500, tallak: ["XS", "S", "M", "L", "XL", "XXL"], argazkia: null, ordena: Date.now(), mota: state.sellCat || "arropa", isNew: true, confirmDelete: false };
   openSheet(sheetProduct());
 }
 
@@ -589,6 +674,9 @@ function sheetProduct() {
            ${e.argazkia ? `<button class="btn small secondary" type="button" data-act="removePhoto">${esc(t("prod.photoRemove"))}</button>` : ""}`
         : `<span class="small muted">${esc(t("prod.photoNoPerm"))}</span>`}</div></div>
     <div class="field"><label for="pName">${esc(t("prod.name"))}</label><input type="text" id="pName" value="${esc(e.izena)}" autocomplete="off"></div>
+    <div class="field"><span class="label">${esc(t("cat.label"))}</span>
+      <div class="seg" role="group">${CATEGORIES.map((c) =>
+        `<button type="button" data-act="setCat" data-cat="${c}" aria-pressed="${e.mota === c}">${esc(t("cat." + c))}</button>`).join("")}</div></div>
     <div class="field"><label for="pPrice">${esc(t("prod.price"))}</label>
       <input type="text" inputmode="decimal" id="pPrice" value="${esc((e.prezioa / 100).toFixed(2).replace(".", ","))}"></div>
     <div class="field"><span class="label">${esc(t("prod.sizes"))}</span>
@@ -627,7 +715,7 @@ function commitProduct() {
   if (!e.tallak.length) { toast(t("prod.needSize")); return; }
   // "Bakarra" no se mezcla con otras tallas.
   const tallak = e.tallak.includes(ONE_SIZE) && e.tallak.length > 1 ? e.tallak.filter((s) => s !== ONE_SIZE) : e.tallak;
-  saveProduct({ id: e.id, izena: name, prezioa: e.prezioa, tallak: sortSizes(tallak), argazkia: e.argazkia || null, ordena: e.ordena });
+  saveProduct({ id: e.id, izena: name, prezioa: e.prezioa, tallak: sortSizes(tallak), argazkia: e.argazkia || null, ordena: e.ordena, mota: e.mota });
   if (e.isNew) {
     Store.set(COL.stock, e.id, { tallak: Object.fromEntries(tallak.map((s) => [s, { n: 0, at: Date.now() }])) });
   }
@@ -763,6 +851,7 @@ function importCsv(text) {
   const iSizes = find(/talla|size/);
   const iUnits = find(/unidad|unitate|kopuru|stock|units/);
   const iPhoto = find(/argazki|foto|photo/);
+  const iCat = find(/mota|categor|tipo|karpeta|carpeta/);
   if (iName < 0) { toast(t("set.importNone")); return; }
 
   const byName = new Map(state.products.map((p) => [String(p.izena).trim().toLowerCase(), p]));
@@ -796,7 +885,9 @@ function importCsv(text) {
     });
     const id = Store.newId();
     const now = Date.now();
-    saveProduct({ id, izena: name, prezioa: price, tallak: sortSizes([...new Set(sizes)]), argazkia, ordena: order++ });
+    const catText = iCat >= 0 ? String(r[iCat] || "").trim().toLowerCase() : "";
+    const mota = CATEGORIES.find((c) => c === catText || t("cat." + c).toLowerCase() === catText) || null;
+    saveProduct({ id, izena: name, prezioa: price, tallak: sortSizes([...new Set(sizes)]), argazkia, ordena: order++, ...(mota ? { mota } : {}) });
     Store.set(COL.stock, id, { tallak: Object.fromEntries(sizes.map((s) => [s, { n: units[s] || 0, at: now }])) });
     existing.add(name.toLowerCase());
     count++;
@@ -825,6 +916,7 @@ function openSheet(html) {
   document.body.style.overflow = "hidden";
 }
 function closeSheet() {
+  cartSheetOpen = false;
   $("#sheet").hidden = true;
   $("#sheetBody").innerHTML = "";
   document.body.style.overflow = "";
@@ -868,12 +960,20 @@ document.addEventListener("click", (ev) => {
       if (!line) break;
       line.qty += Number(d.d);
       if (line.qty <= 0) state.cart.splice(Number(d.i), 1);
-      render();
+      cartChanged();
       break;
     }
+    case "removeLine":
+      state.cart.splice(Number(d.i), 1);
+      cartChanged();
+      break;
+    case "openCart": openCart(); break;
+    case "askClear": state.confirm = "clearCart"; $("#sheetBody").innerHTML = sheetCart(); break;
+    case "noClear": state.confirm = null; $("#sheetBody").innerHTML = sheetCart(); break;
     case "clearCart":
       state.cart = [];
-      render();
+      state.confirm = null;
+      cartChanged();
       break;
     case "openPay": openPay(); break;
     case "payMethod":
@@ -918,6 +1018,12 @@ document.addEventListener("click", (ev) => {
       break;
     }
     case "pickPhoto": readProductForm(); $("#photoInput").click(); break;
+    case "setCat": editing.mota = d.cat; refreshProductSheet(); break;
+    case "openCat":
+      state.sellCat = d.cat || null;
+      window.scrollTo(0, 0);
+      render();
+      break;
     case "removePhoto": editing.argazkia = null; refreshProductSheet(); break;
     case "saveProduct": commitProduct(); break;
     case "askDelete": editing.confirmDelete = true; refreshProductSheet(); break;
@@ -967,7 +1073,7 @@ document.addEventListener("input", (ev) => {
   if (el.id === "search") {
     state.search = el.value;
     stockCache = null;
-    $("#sellGrid").innerHTML = sellCards();
+    $("#sellGrid").innerHTML = sellContent();
   } else if (el.id === "received") {
     pay.received = el.value;
     updateChangeBox();
